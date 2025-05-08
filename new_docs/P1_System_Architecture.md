@@ -52,10 +52,10 @@ graph TD
     end
 
     subgraph ExternalServices[External Services]
-        GitProviders[Git Providers like GitHub, GitLab, etc.]
-        AIModels[AI Model APIs like Anthropic, OpenAI, etc.]
-        CloudProvider[Cloud Provider Services like AWSCompute, Storage, etc.]
-        MCPHub[MCP Hub / External MCP Servers - Optional]
+        GitProviders["Git Providers (GitHub, GitLab, etc.)"]
+        AIModels["AI Model APIs (Anthropic, OpenAI, etc.)"]
+        CloudProvider["Cloud Provider Services (AWSCompute, Storage, etc.)"]
+        MCPHub["MCP Hub / External MCP Servers (Optional)"]
     end
 
     %% User Interactions

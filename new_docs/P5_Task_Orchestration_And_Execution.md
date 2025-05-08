@@ -21,16 +21,16 @@ graph TD
     A[User Submits Task via API/UI] --> B{API Gateway Receives Request};
     B --> C[Auth Service Validates User];
     C --> D[Task Orchestrator: Validates Task Definition];
-    D -- Valid --> E[Task Orchestrator: Stores Task in TaskDB (Status: Queued)];
+    D -- Valid --> E["Task Orchestrator: Stores Task in TaskDB (Status: Queued)"];
     D -- Invalid --> F[Task Orchestrator: Returns Error to User];
     E --> G[Task Orchestrator: Requests Agent from Agent Manager];
     G --> H{Agent Manager: Checks for Available Agent};
     H -- Available --> I[Agent Manager: Assigns Task to Agent Instance];
-    H -- Unavailable --> J[Agent Manager: Provisions New Agent Instance (if scaling allows) or Waits];
+    H -- Unavailable --> J["Agent Manager: Provisions New Agent Instance (if scaling allows) or Waits"];
     J --> I;
     I --> K[Task Orchestrator: Sends Task Details to Agent Instance];
-    K --> L[Agent Instance: Updates Task Status (Running) via Task Orchestrator];
-    L --> M[Agent Instance: Executes Task (Clones Repo, Runs Cline Engine, etc.)];
+    K --> L["Agent Instance: Updates Task Status (Running) via Task Orchestrator"];
+    L --> M["Agent Instance: Executes Task (Clones Repo, Runs Cline Engine, etc.)"];
     M -- Progress/Logs --> N[Agent Instance: Streams Logs/Updates to Task Orchestrator/LogStore];
     M -- Tool Approval Needed (Rare) --> O[Agent Instance: Signals Orchestrator for User Input];
     O --> P[Task Orchestrator: Notifies User via Notification Service/UI];
@@ -39,10 +39,10 @@ graph TD
     R --> M;
     M -- Task Completed --> S[Agent Instance: Uploads Artifacts, Sends Final Result to Task Orchestrator];
     M -- Task Failed --> T[Agent Instance: Reports Error to Task Orchestrator];
-    S --> U[Task Orchestrator: Updates TaskDB (Status: Completed), Stores Results];
-    T --> V[Task Orchestrator: Updates TaskDB (Status: Failed), Stores Error Details];
-    U --> W[Task Orchestrator: Notifies User (Success) via Notification Service];
-    V --> X[Task Orchestrator: Notifies User (Failure) via Notification Service];
+    S --> U["Task Orchestrator: Updates TaskDB (Status: Completed), Stores Results"];
+    T --> V["Task Orchestrator: Updates TaskDB (Status: Failed), Stores Error Details"];
+    U --> W["Task Orchestrator: Notifies User (Success) via Notification Service"];
+    V --> X["Task Orchestrator: Notifies User (Failure) via Notification Service"];
     W --> Y[Agent Manager: Releases/Decommissions Agent Instance];
     X --> Y;
 ```
