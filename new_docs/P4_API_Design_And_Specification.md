@@ -1,0 +1,143 @@
+# P4: API Design and Specification
+
+## 1. Introduction
+
+This document details the design and specification for the external-facing API of the Remote Cline Agent Platform. This API will be used by the Web Application/Dashboard and potentially by third-party client applications or CI/CD systems.
+
+## 2. API Design Principles
+
+*   **RESTful:** Adhere to REST principles where appropriate, using standard HTTP methods (GET, POST, PUT, DELETE), status codes, and resource-based URLs.
+*   **Stateless:** Each API request should contain all information needed to process it.
+*   **Secure:** All endpoints must be secured using robust authentication and authorization mechanisms.
+*   **Versioned:** Implement API versioning (e.g., `/api/v1/...`) to allow for future non-breaking changes.
+*   **Well-Documented:** Provide clear and comprehensive API documentation (e.g., using OpenAPI/Swagger).
+*   **Consistent:** Use consistent naming conventions, request/response structures, and error handling.
+*   **Idempotent (for mutating operations):** Ensure that making the same mutating request multiple times has the same effect as making it once (e.g., for PUT, DELETE).
+
+## 3. Authentication and Authorization
+
+*   **Authentication Method (TBD):**
+    *   **OAuth 2.0 (Client Credentials or Authorization Code flow):** Suitable for third-party applications and the primary Web Application.
+    *   **API Keys:** Simpler for direct server-to-server integrations or CLI tools. Must be securely generated, stored, and managed by users.
+*   **Authorization:**
+    *   Role-Based Access Control (RBAC) or permission-based system to control access to resources and actions based on user roles or assigned permissions.
+    *   Ensure users can only access and manage their own tasks, agents, and data unless explicitly granted wider permissions (e.g., team-based access).
+
+## 4. API Endpoints (Illustrative - Subject to Refinement)
+
+Base URL: `https://api.remotecline.com/v1` (Example)
+
+### 4.1. User Management
+
+*   **`POST /users/register`**
+    *   Description: Register a new user.
+    *   Request Body: User registration details (email, password, name).
+    *   Response: User object (excluding sensitive info), success message.
+*   **`POST /users/login`**
+    *   Description: Authenticate a user.
+    *   Request Body: User credentials (email, password).
+    *   Response: Access token (e.g., JWT), refresh token, user object.
+*   **`GET /users/me`**
+    *   Description: Get details of the currently authenticated user.
+    *   Response: User object.
+*   **`PUT /users/me`**
+    *   Description: Update details of the currently authenticated user.
+    *   Request Body: Fields to update.
+    *   Response: Updated user object.
+*   **`POST /users/apikeys`**
+    *   Description: Generate a new API key for the authenticated user.
+    *   Response: API key details (key value shown once).
+*   **`GET /users/apikeys`**
+    *   Description: List API keys for the authenticated user (excluding key values).
+    *   Response: List of API key metadata.
+*   **`DELETE /users/apikeys/{key_id}`**
+    *   Description: Revoke an API key.
+    *   Response: Success message.
+
+### 4.2. Task Management
+
+*   **`POST /tasks`**
+    *   Description: Create and submit a new task for a Remote Cline Agent.
+    *   Request Body:
+        ```json
+        {
+          "name": "Refactor login module",
+          "description": "Refactor the legacy login module to use modern patterns and improve test coverage.",
+          "repository_url": "https://github.com/user/repo.git",
+          "branch": "main", // Branch to operate on
+          "target_branch_prefix": "cline-agent/", // Prefix for new branch agent will create
+          "context_files": ["src/auth/login.js", "tests/auth/login.test.js"], // Optional: specific files to focus on
+          "instructions": "...", // Detailed instructions for the agent
+          "agent_config": { // Optional: agent-specific configurations
+            "model_preference": "claude-3-opus",
+            "max_iterations": 10
+          },
+          "notifications_enabled": true
+        }
+        ```
+    *   Response: Task object (with ID, status: "queued").
+*   **`GET /tasks`**
+    *   Description: List all tasks for the authenticated user.
+    *   Query Parameters: `status` (queued, running, completed, failed), `limit`, `offset`.
+    *   Response: Paginated list of task objects.
+*   **`GET /tasks/{task_id}`**
+    *   Description: Get details of a specific task.
+    *   Response: Task object.
+*   **`POST /tasks/{task_id}/cancel`**
+    *   Description: Request cancellation of a running task.
+    *   Response: Updated task object (status: "cancelling" or "cancelled").
+*   **`GET /tasks/{task_id}/logs`**
+    *   Description: Get logs for a specific task (can support streaming or pagination).
+    *   Response: Log entries.
+*   **`GET /tasks/{task_id}/artifacts`**
+    *   Description: List artifacts generated by a task.
+    *   Response: List of artifact metadata (name, size, download_url).
+*   **`GET /tasks/{task_id}/artifacts/{artifact_name}`**
+    *   Description: Download a specific artifact.
+    *   Response: File stream.
+*   **`GET /tasks/{task_id}/diff`** (If applicable, for code changes)
+    *   Description: Get the code diff generated by the task.
+    *   Response: Diff content (e.g., in unified diff format).
+
+### 4.3. Repository/VCS Management (Optional - could be part of task creation)
+
+*   **`POST /repositories`**
+    *   Description: Link a new repository to the user's account (e.g., for storing access credentials).
+    *   Request Body: `repository_url`, `access_token` (if private, handled securely).
+    *   Response: Repository link object.
+*   **`GET /repositories`**
+    *   Description: List linked repositories.
+    *   Response: List of repository link objects.
+
+## 5. Common Request/Response Structures
+
+*   **Standard Error Response:**
+    ```json
+    {
+      "error": {
+        "code": "ERROR_CODE_EXAMPLE",
+        "message": "A descriptive error message.",
+        "details": { /* Optional additional details */ }
+      }
+    }
+    ```
+*   **Pagination:** Use `limit` and `offset` query parameters for collections. Responses should include total count and links for next/previous pages.
+
+## 6. Rate Limiting
+
+*   Implement rate limiting on API endpoints to prevent abuse and ensure fair usage.
+*   Communicate rate limit information via HTTP headers (e.g., `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`).
+
+## 7. API Documentation
+
+*   **Tool:** OpenAPI Specification (formerly Swagger).
+*   **Hosting:** Generate interactive API documentation (e.g., Swagger UI, Redocly).
+*   **Content:** Detailed descriptions of each endpoint, parameters, request/response schemas, authentication methods, and error codes.
+
+## 8. Versioning Strategy
+
+*   URL-based versioning (e.g., `/api/v1/...`).
+*   Increment major version for breaking changes. Minor/patch versions for non-breaking additions/fixes can be handled without URL change if backward compatibility is maintained.
+
+---
+Return to [README](../README.md)
